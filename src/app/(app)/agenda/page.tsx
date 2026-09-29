@@ -30,6 +30,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
   const supabase = await createClient();
   const customerTerm = (params.q || "").trim();
   const selectedFilter = params.filter;
+  const hasSelectedPeriod = Boolean(params.period);
   let customerIds: string[] | undefined;
   if (customerTerm) {
     const safe = customerTerm.replace(/[%_,]/g, "");
@@ -42,19 +43,28 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
     .neq("status", "external")
     .order("scheduled_at")
     .limit(500);
-  if (customerTerm) {
-    examsQuery = examsQuery.in("customer_id", customerIds?.length ? customerIds : ["00000000-0000-0000-0000-000000000000"]);
-  } else {
+  if (hasSelectedPeriod) {
     examsQuery = examsQuery.gte("scheduled_at", agendaTimestamp(range.start)).lte("scheduled_at", agendaTimestamp(range.end, true));
   }
+  if (customerTerm) examsQuery = examsQuery.in("customer_id", customerIds?.length ? customerIds : ["00000000-0000-0000-0000-000000000000"]);
   if (selectedFilter === "postponed") examsQuery = examsQuery.in("status", ["scheduled", "confirmed"]).lt("scheduled_at", agendaTimestamp(todayInSaoPaulo()));
   if (selectedFilter === "finalized") examsQuery = examsQuery.in("status", ["completed", "cancelled", "no_show"]);
   if (selectedFilter === "completed") examsQuery = examsQuery.eq("status", "completed");
   if (selectedFilter === "upcoming") examsQuery = examsQuery.in("status", ["scheduled", "confirmed"]).gte("scheduled_at", agendaTimestamp(todayInSaoPaulo()));
   const { data: rows, error } = await examsQuery;
   const list = (rows ?? []) as unknown as Exam[];
-  const filterParam = selectedFilter ? `&filter=${selectedFilter}` : "";
-  const returnTo = `/agenda?period=${range.period}&start=${range.start}&end=${range.end}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}${filterParam}`;
+  function agendaHref(filter = selectedFilter, period: AgendaPeriodKey | undefined = hasSelectedPeriod ? range.period : undefined) {
+    const query = new URLSearchParams();
+    if (period) {
+      query.set("period", period);
+      if (period === "custom") { query.set("start", range.start); query.set("end", range.end); }
+    }
+    if (customerTerm) query.set("q", customerTerm);
+    if (filter) query.set("filter", filter);
+    const text = query.toString();
+    return `/agenda${text ? `?${text}` : ""}`;
+  }
+  const returnTo = agendaHref();
   const grouped = list.reduce<Record<string, Exam[]>>((days, exam) => {
     const key = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date(exam.scheduled_at!));
     (days[key] ??= []).push(exam);
@@ -66,17 +76,15 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
     <PageHeader title="Exames" description="Exames agendados, confirmados e concluídos" action={<AddLink href="/exames/novo"><Plus size={18}/>Novo exame</AddLink>} />
 
     <nav className="period-filter" aria-label="Período dos exames">
-      {quickPeriods.map(({ key, label }) => <Link key={key} href={`/agenda?period=${key}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}${filterParam}`} className={range.period === key ? "active" : ""}>{label}</Link>)}
+      {quickPeriods.map(({ key, label }) => { const active = hasSelectedPeriod && range.period === key; return <Link key={key} href={agendaHref(selectedFilter, active ? undefined : key)} className={active ? "active" : ""}>{label}</Link>; })}
     </nav>
     <nav className="period-filter" aria-label="Situação dos exames">
-      <Link href={`/agenda?period=${range.period}&start=${range.start}&end=${range.end}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}`} className={!selectedFilter ? "active" : ""}>Todos</Link>
-      {examFilters.map(({ key, label }) => <Link key={key} href={`/agenda?period=${range.period}&start=${range.start}&end=${range.end}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}&filter=${key}`} className={selectedFilter === key ? "active" : ""}>{label}</Link>)}
+      <Link href={agendaHref(undefined)} className={!selectedFilter ? "active" : ""}>Todos</Link>
+      {examFilters.map(({ key, label }) => <Link key={key} href={agendaHref(key)} className={selectedFilter === key ? "active" : ""}>{label}</Link>)}
     </nav>
 
     <form className="search-row" aria-label="Buscar exames por cliente">
-      <input type="hidden" name="period" value={range.period} />
-      <input type="hidden" name="start" value={range.start} />
-      <input type="hidden" name="end" value={range.end} />
+      {hasSelectedPeriod && <><input type="hidden" name="period" value={range.period} /><input type="hidden" name="start" value={range.start} /><input type="hidden" name="end" value={range.end} /></>}
       {selectedFilter && <input type="hidden" name="filter" value={selectedFilter} />}
       <div className="search-box"><Search size={19} /><input name="q" defaultValue={customerTerm} placeholder="Buscar cliente por nome, cidade, telefone, CPF ou e-mail" aria-label="Buscar cliente" /></div>
       <button className="btn btn-secondary" type="submit">Buscar cliente</button>
