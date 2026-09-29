@@ -4,12 +4,12 @@ import { completeExam } from "@/app/(app)/exames/actions";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { AddLink, EmptyState, PageHeader, StatusBadge } from "@/components/ui";
 import { RealtimeRefresh } from "@/components/realtime-refresh";
-import { agendaTimestamp, resolveAgendaPeriod, type AgendaPeriodKey } from "@/lib/agenda-period";
+import { agendaTimestamp, resolveAgendaPeriod, todayInSaoPaulo, type AgendaPeriodKey } from "@/lib/agenda-period";
 import { createClient } from "@/lib/supabase/server";
 import { date, examLabels } from "@/lib/utils";
 import type { Exam } from "@/lib/database.types";
 
-type Search = { period?: string; start?: string; end?: string; q?: string; saved?: string; error?: string };
+type Search = { period?: string; start?: string; end?: string; q?: string; filter?: "postponed" | "finalized" | "completed" | "upcoming"; saved?: string; error?: string };
 const quickPeriods: Array<{ key: AgendaPeriodKey; label: string }> = [
   { key: "today", label: "Hoje" },
   { key: "last7", label: "Últimos 7 dias" },
@@ -17,12 +17,19 @@ const quickPeriods: Array<{ key: AgendaPeriodKey; label: string }> = [
   { key: "last30", label: "Últimos 30 dias" },
   { key: "next7", label: "Próximos 7 dias" },
 ];
+const examFilters: Array<{ key: NonNullable<Search["filter"]>; label: string }> = [
+  { key: "postponed", label: "Exames adiados" },
+  { key: "finalized", label: "Exames finalizados" },
+  { key: "completed", label: "Exames concluídos" },
+  { key: "upcoming", label: "Exames próximos" },
+];
 
 export default async function Agenda({ searchParams }: { searchParams: Promise<Search> }) {
   const params = await searchParams;
   const range = resolveAgendaPeriod(params);
   const supabase = await createClient();
   const customerTerm = (params.q || "").trim();
+  const selectedFilter = params.filter;
   let customerIds: string[] | undefined;
   if (customerTerm) {
     const safe = customerTerm.replace(/[%_,]/g, "");
@@ -40,9 +47,14 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
   } else {
     examsQuery = examsQuery.gte("scheduled_at", agendaTimestamp(range.start)).lte("scheduled_at", agendaTimestamp(range.end, true));
   }
+  if (selectedFilter === "postponed") examsQuery = examsQuery.in("status", ["scheduled", "confirmed"]).lt("scheduled_at", agendaTimestamp(todayInSaoPaulo()));
+  if (selectedFilter === "finalized") examsQuery = examsQuery.in("status", ["completed", "cancelled", "no_show"]);
+  if (selectedFilter === "completed") examsQuery = examsQuery.eq("status", "completed");
+  if (selectedFilter === "upcoming") examsQuery = examsQuery.in("status", ["scheduled", "confirmed"]).gte("scheduled_at", agendaTimestamp(todayInSaoPaulo()));
   const { data: rows, error } = await examsQuery;
   const list = (rows ?? []) as unknown as Exam[];
-  const returnTo = `/agenda?period=${range.period}&start=${range.start}&end=${range.end}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}`;
+  const filterParam = selectedFilter ? `&filter=${selectedFilter}` : "";
+  const returnTo = `/agenda?period=${range.period}&start=${range.start}&end=${range.end}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}${filterParam}`;
   const grouped = list.reduce<Record<string, Exam[]>>((days, exam) => {
     const key = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date(exam.scheduled_at!));
     (days[key] ??= []).push(exam);
@@ -54,19 +66,24 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
     <PageHeader title="Exames" description="Exames agendados, confirmados e concluídos" action={<AddLink href="/exames/novo"><Plus size={18}/>Novo exame</AddLink>} />
 
     <nav className="period-filter" aria-label="Período dos exames">
-      {quickPeriods.map(({ key, label }) => <Link key={key} href={`/agenda?period=${key}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}`} className={range.period === key ? "active" : ""}>{label}</Link>)}
+      {quickPeriods.map(({ key, label }) => <Link key={key} href={`/agenda?period=${key}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}${filterParam}`} className={range.period === key ? "active" : ""}>{label}</Link>)}
+    </nav>
+    <nav className="period-filter" aria-label="Situação dos exames">
+      <Link href={`/agenda?period=${range.period}&start=${range.start}&end=${range.end}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}`} className={!selectedFilter ? "active" : ""}>Todos</Link>
+      {examFilters.map(({ key, label }) => <Link key={key} href={`/agenda?period=${range.period}&start=${range.start}&end=${range.end}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}&filter=${key}`} className={selectedFilter === key ? "active" : ""}>{label}</Link>)}
     </nav>
 
     <form className="search-row" aria-label="Buscar exames por cliente">
       <input type="hidden" name="period" value={range.period} />
       <input type="hidden" name="start" value={range.start} />
       <input type="hidden" name="end" value={range.end} />
+      {selectedFilter && <input type="hidden" name="filter" value={selectedFilter} />}
       <div className="search-box"><Search size={19} /><input name="q" defaultValue={customerTerm} placeholder="Buscar cliente por nome, cidade, telefone, CPF ou e-mail" aria-label="Buscar cliente" /></div>
       <button className="btn btn-secondary" type="submit">Buscar cliente</button>
     </form>
 
     <form className="panel panel-body agenda-range" aria-label="Selecionar intervalo personalizado">
-      <input type="hidden" name="period" value="custom" /><input type="hidden" name="q" value={customerTerm} />
+      <input type="hidden" name="period" value="custom" /><input type="hidden" name="q" value={customerTerm} />{selectedFilter && <input type="hidden" name="filter" value={selectedFilter} />}
       <div className="field"><label htmlFor="start">Data inicial</label><input id="start" type="date" name="start" defaultValue={range.start} required /></div>
       <div className="field"><label htmlFor="end">Data final</label><input id="end" type="date" name="end" defaultValue={range.end} required /></div>
       <button className="btn btn-secondary" type="submit"><CalendarCheck size={17}/>Aplicar intervalo</button>
@@ -94,6 +111,6 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
           </div>
         </article>)}</div>
       </section>)}</div> :
-      <div className="panel"><EmptyState title={customerTerm ? "Nenhum exame para este cliente" : "Nenhuma consulta no período"} description={customerTerm ? "A busca considera todos os períodos." : "Selecione outro intervalo ou agende uma nova consulta."} action={<AddLink href="/exames/novo">Agendar exame</AddLink>}/></div>}
+      <div className="panel"><EmptyState title={customerTerm ? "Nenhum exame para este cliente" : "Nenhuma consulta encontrada"} description={customerTerm ? "A busca considera todos os períodos." : "Ajuste os filtros ou agende uma nova consulta."} action={<AddLink href="/exames/novo">Agendar exame</AddLink>}/></div>}
   </div>;
 }
