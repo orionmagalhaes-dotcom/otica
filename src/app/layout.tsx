@@ -1,10 +1,19 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
+import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
-export const metadata: Metadata = { title: { default: "Ótica Central", template: "%s | Ótica Central" }, description: "Gestão integrada para ótica" };
+export const metadata: Metadata = {
+  title: { default: "Ótica Central", template: "%s | Ótica Central" },
+  description: "Gestão integrada para ótica",
+  applicationName: "Ótica Central",
+  manifest: "/manifest.webmanifest",
+  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icon-192.png", sizes: "192x192", type: "image/png" }], apple: "/apple-touch-icon.png" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Ótica Central" },
+  formatDetection: { telephone: false },
+};
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#0d5c52" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="pt-BR"><body>{children}<Toaster richColors position="top-center" /></body></html>;
+  return <html lang="pt-BR"><body>{children}<PwaRegister/><Toaster richColors position="top-center" /></body></html>;
 }

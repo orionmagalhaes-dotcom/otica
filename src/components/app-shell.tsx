@@ -19,6 +19,7 @@ const navigation = [
 export function AppShell({ children, profile }: { children: React.ReactNode; profile: Profile }) {
   const pathname = usePathname(); const router = useRouter(); const [open, setOpen] = useState(false);
   const visible = navigation.filter((item) => (!item.manager || profile.role !== "employee") && (!item.admin || profile.role === "admin"));
+  const quickNavigation = ["/", "/agenda", "/vendas", "/clientes", "/produtos"].map((href) => visible.find((item) => item.href === href)).filter(Boolean) as typeof visible;
   async function logout() { await createClient().auth.signOut(); router.push("/login"); router.refresh(); }
   const links = visible.map(({ href, label, icon: Icon }) => {
     const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -33,6 +34,6 @@ export function AppShell({ children, profile }: { children: React.ReactNode; pro
     </aside>
     {open && <button className="backdrop" onClick={() => setOpen(false)} aria-label="Fechar menu"/>}
     <main>{children}</main>
-    <nav className="bottom-nav" aria-label="Navegação rápida">{visible.slice(0, 5).map(({href,label,icon:Icon}) => <Link key={href} href={href} className={cn((href === "/" ? pathname === "/" : pathname.startsWith(href)) && "active")}><Icon size={21}/><span>{label}</span></Link>)}</nav>
+    <nav className="bottom-nav" aria-label="Navegação rápida">{quickNavigation.map(({href,label,icon:Icon}) => <Link key={href} href={href} className={cn((href === "/" ? pathname === "/" : pathname.startsWith(href)) && "active")}><Icon size={21}/><span>{label}</span></Link>)}</nav>
   </div>;
 }

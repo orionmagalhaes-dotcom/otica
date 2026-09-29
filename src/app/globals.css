@@ -76,6 +76,24 @@ td { padding: 14px 12px; border-bottom: 1px solid #edf0ee; }
   .field-span-2 { grid-column: span 2; }
   .search-row { flex-direction: row; }
 }
+@media (min-width: 760px) and (max-width: 1023px) {
+  .page { padding-inline: 34px; }
+  .grid-cards { grid-template-columns: repeat(3, 1fr); }
+  .data-card { padding: 18px 20px; }
+  .panel-body { padding: 24px; }
+}
+@media (max-width: 479px) {
+  .page { padding: 20px 14px calc(88px + env(safe-area-inset-bottom)); }
+  .page-header { flex-direction: column; align-items: stretch; margin-bottom: 20px; }
+  .page-header > .btn, .page-header > a { width: 100%; }
+  .form-actions { display: grid; grid-template-columns: 1fr; }
+  .form-actions .btn { width: 100%; }
+  .metric { min-height: 108px; }
+  .panel-header, .panel-body { padding-inline: 16px; }
+}
+@media (display-mode: standalone) {
+  .mobile-header { height: calc(60px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); }
+}
 @media (min-width: 1024px) {
   .app-shell { padding-left: 248px; }
   .page { padding: 36px 40px 60px; }
