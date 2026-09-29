@@ -12,6 +12,7 @@ export interface Customer {
 }
 export interface Exam {
   id: string; customer_id: string; status: ExamStatus; scheduled_at: string | null; duration_minutes: number;
+  exam_product_id?: string | null;
   professional_name: string | null; source_name: string | null; prescription: Json | null; notes: string | null;
   cancellation_reason: string | null; completed_at: string | null; created_at: string;
   customers?: Pick<Customer, "id" | "full_name" | "phone">;

@@ -26,7 +26,7 @@ export default async function DashboardPage() {
       <Metric label="Saldo do mês" value={money(s.month_balance)} note="Receitas menos despesas" />
     </section>
     <div className="split" style={{marginTop:18}}>
-      <section className="panel"><div className="panel-header"><h2 className="section-title">Próximos exames</h2><Link href="/agenda">Ver agenda</Link></div>
+      <section className="panel"><div className="panel-header"><h2 className="section-title">Próximos exames</h2><Link href="/agenda">Ver exames</Link></div>
         {upcoming.length ? <div className="data-list" style={{padding:12}}>{upcoming.map(exam => <Link className="data-card" href={`/exames/${exam.id}`} key={exam.id}><div className="flex items-center justify-between gap-3"><span className="data-card-title">{exam.customers?.full_name}</span><StatusBadge tone={exam.status === "confirmed" ? "success" : "default"}>{examLabels[exam.status]}</StatusBadge></div><div className="data-card-meta"><span><Clock3 size={14} className="inline mr-1"/>{date(exam.scheduled_at,true)}</span><span>{exam.customers?.phone || "Sem telefone"}</span></div></Link>)}</div> : <div className="empty">Nenhum exame próximo.</div>}
       </section>
       <section className="panel"><div className="panel-header"><h2 className="section-title">Reposição necessária</h2><Link href="/produtos?filtro=baixo">Ver estoque</Link></div>

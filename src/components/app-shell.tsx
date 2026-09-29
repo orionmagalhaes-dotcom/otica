@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarDays, ChartNoAxesCombined, CircleDollarSign, ClipboardList, ContactRound, Eye, House, KeyRound, LogOut, Menu, Package, ShoppingBag, Users, X } from "lucide-react";
+import { CalendarDays, ChartNoAxesCombined, CircleDollarSign, ClipboardList, ContactRound, House, KeyRound, LogOut, Menu, Package, ShoppingBag, Users, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Profile } from "@/lib/database.types";
@@ -10,8 +10,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
   { href: "/", label: "Início", icon: House }, { href: "/clientes", label: "Clientes", icon: ContactRound },
-  { href: "/agenda", label: "Agenda", icon: CalendarDays }, { href: "/exames", label: "Exames", icon: Eye },
-  { href: "/produtos", label: "Produtos", icon: Package }, { href: "/vendas", label: "Vendas", icon: ShoppingBag },
+  { href: "/agenda", label: "Exames", icon: CalendarDays },
+  { href: "/produtos", label: "Produtos e exames", icon: Package }, { href: "/vendas", label: "Vendas", icon: ShoppingBag },
   { href: "/financeiro", label: "Financeiro", icon: CircleDollarSign, manager: true }, { href: "/funcionarios", label: "Funcionários", icon: Users, manager: true },
   { href: "/relatorios", label: "Relatórios", icon: ChartNoAxesCombined, manager: true }, { href: "/auditoria", label: "Auditoria", icon: ClipboardList, manager: true },
   { href: "/acessos", label: "Acessos", icon: KeyRound, admin: true },

@@ -40,9 +40,9 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
 
   return <div className="page">
     <RealtimeRefresh table="exams" />
-    <PageHeader title="Agenda" description="Consultas agendadas, confirmadas e concluídas" action={<AddLink href="/exames/novo"><Plus size={18}/>Agendar</AddLink>} />
+    <PageHeader title="Exames" description="Exames agendados, confirmados e concluídos" action={<AddLink href="/exames/novo"><Plus size={18}/>Novo exame</AddLink>} />
 
-    <nav className="period-filter" aria-label="Período da agenda">
+    <nav className="period-filter" aria-label="Período dos exames">
       {quickPeriods.map(({ key, label }) => <Link key={key} href={`/agenda?period=${key}`} className={range.period === key ? "active" : ""}>{label}</Link>)}
     </nav>
 
@@ -57,7 +57,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
     {params.saved === "completed" && <div className="notice notice-success" role="status">Consulta marcada como concluída.</div>}
     {params.error && <div className="notice notice-error" role="alert">Não foi possível concluir a consulta. Ela pode já ter sido atualizada.</div>}
 
-    {error ? <div className="panel empty">Não foi possível carregar a agenda.</div> : list.length ?
+    {error ? <div className="panel empty">Não foi possível carregar os exames.</div> : list.length ?
       <div className="agenda-days">{Object.entries(grouped).map(([day, exams]) => <section key={day} className="agenda-day">
         <h2>{date(`${day}T12:00:00-03:00`)}</h2>
         <div className="data-list">{exams.map(exam => <article className="data-card agenda-card" key={exam.id}>

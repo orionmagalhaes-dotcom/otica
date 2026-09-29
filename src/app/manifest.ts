@@ -20,7 +20,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
     ],
     shortcuts: [
-      { name: "Agenda", short_name: "Agenda", url: "/agenda", icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }] },
+      { name: "Exames", short_name: "Exames", url: "/agenda", icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }] },
       { name: "Nova venda", short_name: "Venda", url: "/vendas/nova", icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }] },
       { name: "Clientes", short_name: "Clientes", url: "/clientes", icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }] },
     ],
