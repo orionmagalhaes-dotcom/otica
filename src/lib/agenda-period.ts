@@ -1,4 +1,4 @@
-export type AgendaPeriodKey = "today" | "last7" | "last15" | "last30" | "next7" | "custom";
+export type AgendaPeriodKey = "all" | "today" | "last7" | "last15" | "last30" | "next7" | "custom";
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -34,6 +34,7 @@ export function resolveAgendaPeriod(
     }
     return { period, start: today, end: today, invalid: true };
   }
+  if (period === "all") return { period, start: today, end: today, invalid: false };
 
   const days: Partial<Record<AgendaPeriodKey, number>> = { last7: 6, last15: 14, last30: 29 };
   if (period in days) return { period, start: shiftDate(today, -days[period]!), end: today, invalid: false };

@@ -9,8 +9,9 @@ import { createClient } from "@/lib/supabase/server";
 import { date, examLabels } from "@/lib/utils";
 import type { Exam } from "@/lib/database.types";
 
-type Search = { period?: string; start?: string; end?: string; q?: string; filter?: "postponed" | "finalized" | "completed" | "upcoming"; saved?: string; error?: string };
+type Search = { period?: string; start?: string; end?: string; q?: string; filter?: "postponed" | "cancelled" | "completed" | "upcoming"; saved?: string; error?: string };
 const quickPeriods: Array<{ key: AgendaPeriodKey; label: string }> = [
+  { key: "all", label: "Todo período" },
   { key: "today", label: "Hoje" },
   { key: "last7", label: "Últimos 7 dias" },
   { key: "last15", label: "Últimos 15 dias" },
@@ -19,7 +20,7 @@ const quickPeriods: Array<{ key: AgendaPeriodKey; label: string }> = [
 ];
 const examFilters: Array<{ key: NonNullable<Search["filter"]>; label: string }> = [
   { key: "postponed", label: "Exames adiados" },
-  { key: "finalized", label: "Exames finalizados" },
+  { key: "cancelled", label: "Exames cancelados" },
   { key: "completed", label: "Exames concluídos" },
   { key: "upcoming", label: "Exames próximos" },
 ];
@@ -30,7 +31,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
   const supabase = await createClient();
   const customerTerm = (params.q || "").trim();
   const selectedFilter = params.filter;
-  const hasSelectedPeriod = Boolean(params.period);
+  const hasSelectedPeriod = Boolean(params.period) && range.period !== "all";
   let customerIds: string[] | undefined;
   if (customerTerm) {
     const safe = customerTerm.replace(/[%_,]/g, "");
@@ -48,12 +49,12 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
   }
   if (customerTerm) examsQuery = examsQuery.in("customer_id", customerIds?.length ? customerIds : ["00000000-0000-0000-0000-000000000000"]);
   if (selectedFilter === "postponed") examsQuery = examsQuery.in("status", ["scheduled", "confirmed"]).lt("scheduled_at", agendaTimestamp(todayInSaoPaulo()));
-  if (selectedFilter === "finalized") examsQuery = examsQuery.in("status", ["completed", "cancelled", "no_show"]);
+  if (selectedFilter === "cancelled") examsQuery = examsQuery.eq("status", "cancelled");
   if (selectedFilter === "completed") examsQuery = examsQuery.eq("status", "completed");
   if (selectedFilter === "upcoming") examsQuery = examsQuery.in("status", ["scheduled", "confirmed"]).gte("scheduled_at", agendaTimestamp(todayInSaoPaulo()));
   const { data: rows, error } = await examsQuery;
   const list = (rows ?? []) as unknown as Exam[];
-  function agendaHref(filter: Search["filter"] | null = selectedFilter ?? null, period: AgendaPeriodKey | undefined = hasSelectedPeriod ? range.period : undefined) {
+  function agendaHref(filter: Search["filter"] | null = selectedFilter ?? null, period: AgendaPeriodKey | undefined = params.period === "all" ? "all" : hasSelectedPeriod ? range.period : undefined) {
     const query = new URLSearchParams();
     if (period) {
       query.set("period", period);
@@ -76,7 +77,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
     <PageHeader title="Exames" description="Exames agendados, confirmados e concluídos" action={<AddLink href="/exames/novo"><Plus size={18}/>Novo exame</AddLink>} />
 
     <nav className="period-filter" aria-label="Período dos exames">
-      {quickPeriods.map(({ key, label }) => { const active = hasSelectedPeriod && range.period === key; return <Link key={key} href={agendaHref(selectedFilter, active ? undefined : key)} className={active ? "active" : ""}>{label}</Link>; })}
+      {quickPeriods.map(({ key, label }) => { const active = range.period === key && (key === "all" ? params.period === "all" : hasSelectedPeriod); return <Link key={key} href={agendaHref(selectedFilter, active ? undefined : key)} className={active ? "active" : ""}>{label}</Link>; })}
     </nav>
     <nav className="period-filter" aria-label="Situação dos exames">
       <Link href={agendaHref(null)} className={!selectedFilter ? "active" : ""}>Todos</Link>

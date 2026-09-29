@@ -9,6 +9,7 @@ import type { Sale } from "@/lib/database.types";
 const labels={completed:"Concluída",draft:"Não concluída",cancelled:"Cancelada"};
 type SalesSearch = { period?: string; start?: string; end?: string; q?: string };
 const quickPeriods: Array<{ key: Exclude<AgendaPeriodKey, "next7" | "custom">; label: string }> = [
+  { key: "all", label: "Todo período" },
   { key: "today", label: "Hoje" },
   { key: "last7", label: "Últimos 7 dias" },
   { key: "last15", label: "Últimos 15 dias" },
@@ -19,7 +20,7 @@ export default async function Sales({ searchParams }: { searchParams: Promise<Sa
   const params = await searchParams;
   const range = resolveAgendaPeriod(params);
   const term = (params.q || "").trim();
-  const hasSelectedPeriod = Boolean(params.period);
+  const hasSelectedPeriod = Boolean(params.period) && range.period !== "all";
   const s = await createClient();
   let customerIds: string[] | undefined;
   if (term) {
@@ -34,7 +35,7 @@ export default async function Sales({ searchParams }: { searchParams: Promise<Sa
   if (term) salesQuery = salesQuery.in("customer_id", customerIds?.length ? customerIds : ["00000000-0000-0000-0000-000000000000"]);
   const { data, error } = await salesQuery;
   const list = (data ?? []) as unknown as Sale[];
-  function salesHref(period: AgendaPeriodKey | undefined = hasSelectedPeriod ? range.period : undefined) {
+  function salesHref(period: AgendaPeriodKey | undefined = params.period === "all" ? "all" : hasSelectedPeriod ? range.period : undefined) {
     const query = new URLSearchParams();
     if (period) {
       query.set("period", period);
@@ -48,7 +49,7 @@ export default async function Sales({ searchParams }: { searchParams: Promise<Sa
   return <div className="page">
     <PageHeader title="Vendas" description="Vendas concluídas e oportunidades para acompanhamento" action={<AddLink href="/vendas/nova"><Plus size={18} />Nova venda</AddLink>} />
     <nav className="period-filter" aria-label="Período das vendas">
-      {quickPeriods.map(({ key, label }) => { const active = hasSelectedPeriod && range.period === key; return <Link key={key} href={salesHref(active ? undefined : key)} className={active ? "active" : ""}>{label}</Link>; })}
+      {quickPeriods.map(({ key, label }) => { const active = range.period === key && (key === "all" ? params.period === "all" : hasSelectedPeriod); return <Link key={key} href={salesHref(active ? undefined : key)} className={active ? "active" : ""}>{label}</Link>; })}
     </nav>
     <form className="search-row" aria-label="Buscar vendas por cliente">
       {hasSelectedPeriod && <><input type="hidden" name="period" value={range.period} /><input type="hidden" name="start" value={range.start} /><input type="hidden" name="end" value={range.end} /></>}
