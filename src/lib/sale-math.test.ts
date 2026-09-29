@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateSale } from "./sale-math";
+import { calculateSale, fillRemainingPayment } from "./sale-math";
 
 describe("calculateSale", () => {
   it("calcula itens e descontos sem arredondar prematuramente", () => {
@@ -10,5 +10,8 @@ describe("calculateSale", () => {
   });
   it("rejeita quantidade não positiva", () => {
     expect(() => calculateSale([{ quantity: 0, unitPrice: 20 }])).toThrow("Valores inválidos");
+  });
+  it("preenche o pagamento restante considerando o desconto", () => {
+    expect(fillRemainingPayment(180, [{ amount: 50 }, { amount: 0 }], 1)).toBe(130);
   });
 });

@@ -1,12 +1,13 @@
 import { Eye } from "lucide-react";
 import { login } from "./actions";
+import { ThemeToggle } from "@/components/theme-toggle";
 import "./login.css";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
   const configured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   return <main className="login-page"><section className="login-card">
-    <div className="login-brand"><span><Eye size={24}/></span><div>Ótica Central<small>Gestão integrada</small></div></div>
+    <div className="login-card-top"><div className="login-brand"><span><Eye size={24}/></span><div>Ótica Central<small>Gestão integrada</small></div></div><ThemeToggle compact/></div>
     <div><h1>Bem-vindo</h1><p>Entre com seu nome de usuário e senha.</p></div>
     {!configured && <div className="login-error" role="status">Ambiente local ativo. A autenticação será habilitada depois que conectarmos o Supabase.</div>}
     {configured && error && <div className="login-error" role="alert">{error === "inactive" ? "Este acesso está inativo. Fale com um administrador." : "E-mail ou senha incorretos."}</div>}

@@ -1,5 +1,6 @@
-.login-page { min-height:100vh; display:grid; place-items:center; padding:24px; background:#edf1ed; }
-.login-card { width:min(100%,420px); background:white; border:1px solid var(--line); border-radius:16px; padding:30px; display:grid; gap:28px; }
+.login-page { min-height:100vh; display:grid; place-items:center; padding:24px; background:var(--canvas); }
+.login-card { width:min(100%,420px); background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:30px; display:grid; gap:28px; }
+.login-card-top { display:flex; align-items:center; justify-content:space-between; gap:16px; }
 .login-brand { display:flex; align-items:center; gap:12px; font-family:Georgia,serif; font-size:1.15rem; }
 .login-brand>span { width:44px; height:44px; display:grid; place-items:center; border-radius:50%; color:white; background:var(--brand); }
 .login-brand small { display:block; color:var(--muted); text-transform:uppercase; letter-spacing:.12em; font:600 .58rem Arial,sans-serif; margin-top:3px; }

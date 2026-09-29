@@ -6,6 +6,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Profile } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/client";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
   { href: "/", label: "Início", icon: House }, { href: "/clientes", label: "Clientes", icon: ContactRound },
@@ -26,10 +27,11 @@ export function AppShell({ children, profile }: { children: React.ReactNode; pro
     return <Link key={href} href={href} onClick={() => setOpen(false)} className={cn("nav-link", active && "active")} aria-current={active ? "page" : undefined}><Icon size={19} /><span>{label}</span></Link>;
   });
   return <div className="app-shell">
-    <header className="mobile-header"><button className="mobile-menu" onClick={() => setOpen(true)} aria-label="Abrir menu"><Menu /></button><Link href="/" className="mobile-brand">Ótica Central</Link><div className="avatar">{profile.full_name.slice(0,1)}</div></header>
+    <header className="mobile-header"><button className="mobile-menu" onClick={() => setOpen(true)} aria-label="Abrir menu"><Menu /></button><Link href="/" className="mobile-brand">Ótica Central</Link><div className="mobile-header-actions"><ThemeToggle compact/><div className="avatar">{profile.full_name.slice(0,1)}</div></div></header>
     <aside className={cn("sidebar", open && "open")}>
       <div className="sidebar-top"><Link href="/" className="brand"><span className="brand-mark">O</span><span>Ótica Central<small>Gestão</small></span></Link><button className="close-menu" onClick={() => setOpen(false)} aria-label="Fechar menu"><X /></button></div>
       <nav aria-label="Navegação principal">{links}</nav>
+      <ThemeToggle />
       <div className="sidebar-user"><div className="avatar">{profile.full_name.slice(0,1)}</div><div><strong>{profile.full_name}</strong><span>{profile.role === "admin" ? "Administrador" : profile.role === "manager" ? "Gerente" : "Funcionário"}</span></div><button onClick={logout} aria-label="Sair"><LogOut size={18}/></button></div>
     </aside>
     {open && <button className="backdrop" onClick={() => setOpen(false)} aria-label="Fechar menu"/>}

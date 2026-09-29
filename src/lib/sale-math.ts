@@ -10,3 +10,14 @@ export function calculateSale(lines: SaleLine[], generalDiscount = 0) {
   if (generalDiscount < 0 || generalDiscount > subtotal) throw new Error("Desconto geral inválido");
   return { subtotal, total: subtotal - generalDiscount };
 }
+
+export type PaymentAmount = { amount: number };
+
+function roundCurrency(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+export function fillRemainingPayment(total: number, payments: PaymentAmount[], targetIndex: number) {
+  const paidByOthers = payments.reduce((sum, payment, index) => index === targetIndex ? sum : sum + Number(payment.amount || 0), 0);
+  return Math.max(0, roundCurrency(total - paidByOthers));
+}

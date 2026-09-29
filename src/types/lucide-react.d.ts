@@ -18,12 +18,14 @@ declare module "lucide-react" {
   export const LogOut: LucideIcon;
   export const Menu: LucideIcon;
   export const Minus: LucideIcon;
+  export const Moon: LucideIcon;
   export const Package: LucideIcon;
   export const Pencil: LucideIcon;
   export const Plus: LucideIcon;
   export const Search: LucideIcon;
   export const Server: LucideIcon;
   export const ShoppingBag: LucideIcon;
+  export const Sun: LucideIcon;
   export const Trash2: LucideIcon;
   export const Users: LucideIcon;
   export const X: LucideIcon;
