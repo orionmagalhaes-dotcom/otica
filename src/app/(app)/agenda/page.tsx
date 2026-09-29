@@ -32,15 +32,17 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
   let examsQuery = supabase
     .from("exams")
     .select("id,status,scheduled_at,completed_at,duration_minutes,professional_name,customers(id,full_name,phone)")
-    .gte("scheduled_at", agendaTimestamp(range.start))
-    .lte("scheduled_at", agendaTimestamp(range.end, true))
     .neq("status", "external")
     .order("scheduled_at")
     .limit(500);
-  if (customerTerm) examsQuery = examsQuery.in("customer_id", customerIds?.length ? customerIds : ["00000000-0000-0000-0000-000000000000"]);
+  if (customerTerm) {
+    examsQuery = examsQuery.in("customer_id", customerIds?.length ? customerIds : ["00000000-0000-0000-0000-000000000000"]);
+  } else {
+    examsQuery = examsQuery.gte("scheduled_at", agendaTimestamp(range.start)).lte("scheduled_at", agendaTimestamp(range.end, true));
+  }
   const { data: rows, error } = await examsQuery;
   const list = (rows ?? []) as unknown as Exam[];
-  const returnTo = `/agenda?period=${range.period}&start=${range.start}&end=${range.end}`;
+  const returnTo = `/agenda?period=${range.period}&start=${range.start}&end=${range.end}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}`;
   const grouped = list.reduce<Record<string, Exam[]>>((days, exam) => {
     const key = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date(exam.scheduled_at!));
     (days[key] ??= []).push(exam);
@@ -92,6 +94,6 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
           </div>
         </article>)}</div>
       </section>)}</div> :
-      <div className="panel"><EmptyState title="Nenhuma consulta no período" description="Selecione outro intervalo ou agende uma nova consulta." action={<AddLink href="/exames/novo">Agendar exame</AddLink>}/></div>}
+      <div className="panel"><EmptyState title={customerTerm ? "Nenhum exame para este cliente" : "Nenhuma consulta no período"} description={customerTerm ? "A busca considera todos os períodos." : "Selecione outro intervalo ou agende uma nova consulta."} action={<AddLink href="/exames/novo">Agendar exame</AddLink>}/></div>}
   </div>;
 }

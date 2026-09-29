@@ -1,3 +1,57 @@
-import Link from "next/link";import { Plus,Search } from "lucide-react";import { AddLink,EmptyState,PageHeader,StatusBadge } from "@/components/ui";import { createClient } from "@/lib/supabase/server";import { date,money } from "@/lib/utils";import type { Sale } from "@/lib/database.types";
+import Link from "next/link";
+import { CalendarCheck, Plus, Search } from "lucide-react";
+import { AddLink, EmptyState, PageHeader, StatusBadge } from "@/components/ui";
+import { createClient } from "@/lib/supabase/server";
+import { resolveAgendaPeriod, type AgendaPeriodKey } from "@/lib/agenda-period";
+import { date, money } from "@/lib/utils";
+import type { Sale } from "@/lib/database.types";
+
 const labels={completed:"Concluída",draft:"Não concluída",cancelled:"Cancelada"};
-export default async function Sales({searchParams}:{searchParams:Promise<{inicio?:string;fim?:string;q?:string}>}){const sp=await searchParams;const term=(sp.q||"").trim();const s=await createClient();let customerIds:string[]|undefined;if(term){const safe=term.replace(/[%_,]/g,"");const {data}=await s.from("customers").select("id").or(`full_name.ilike.%${safe}%,cpf.ilike.%${safe}%,phone.ilike.%${safe}%,email.ilike.%${safe}%,city.ilike.%${safe}%,state.ilike.%${safe}%,address_line.ilike.%${safe}%`).limit(1000);customerIds=(data??[]).map((customer:{id:string})=>String(customer.id));}let q=s.from("sales").select("id,number,status,total,completed_at,created_at,customers(full_name),employees(full_name)").order("created_at",{ascending:false}).limit(100);if(term)q=q.in("customer_id",customerIds?.length?customerIds:["00000000-0000-0000-0000-000000000000"]);if(sp.inicio)q=q.gte("created_at",`${sp.inicio}T00:00:00`);if(sp.fim)q=q.lte("created_at",`${sp.fim}T23:59:59`);const {data,error}=await q;const list=(data??[]) as unknown as Sale[];return <div className="page"><PageHeader title="Vendas" description="Vendas concluídas e oportunidades para acompanhamento" action={<AddLink href="/vendas/nova"><Plus size={18}/>Nova venda</AddLink>}/><form className="search-row"><div className="search-box"><Search size={19}/><input name="q" defaultValue={term} placeholder="Buscar cliente por nome, cidade, telefone, CPF ou e-mail" aria-label="Buscar cliente"/></div><div className="field"><label>De</label><input type="date" name="inicio" defaultValue={sp.inicio}/></div><div className="field"><label>Até</label><input type="date" name="fim" defaultValue={sp.fim}/></div><button className="btn btn-secondary self-end">Filtrar</button></form>{error?<div className="panel empty">Erro ao carregar vendas.</div>:list.length?<div className="data-list">{list.map(v=><Link className="data-card" href={`/vendas/${v.id}`} key={v.id}><div className="flex justify-between"><strong>{v.status==="draft"?"Oportunidade":"Venda"} #{v.number}</strong><StatusBadge tone={v.status==="completed"?"success":v.status==="draft"?"warning":"danger"}>{labels[v.status]}</StatusBadge></div><div className="data-card-meta"><span>{v.customers?.full_name||"Consumidor não identificado"}</span><span>{v.employees?.full_name}</span><span>{date(v.completed_at||v.created_at,true)}</span><strong>{money(v.total)}</strong></div></Link>)}</div>:<div className="panel"><EmptyState title="Nenhuma venda encontrada" description="Registre uma nova venda ou ajuste o período."/></div>}</div>}
+type SalesSearch = { period?: string; start?: string; end?: string; q?: string };
+const quickPeriods: Array<{ key: Exclude<AgendaPeriodKey, "next7" | "custom">; label: string }> = [
+  { key: "today", label: "Hoje" },
+  { key: "last7", label: "Últimos 7 dias" },
+  { key: "last15", label: "Últimos 15 dias" },
+  { key: "last30", label: "Últimos 30 dias" },
+];
+
+export default async function Sales({ searchParams }: { searchParams: Promise<SalesSearch> }) {
+  const params = await searchParams;
+  const range = resolveAgendaPeriod(params);
+  const term = (params.q || "").trim();
+  const s = await createClient();
+  let customerIds: string[] | undefined;
+  if (term) {
+    const safe = term.replace(/[%_,]/g, "");
+    const { data } = await s.from("customers").select("id").or(`full_name.ilike.%${safe}%,cpf.ilike.%${safe}%,phone.ilike.%${safe}%,email.ilike.%${safe}%,city.ilike.%${safe}%,state.ilike.%${safe}%,address_line.ilike.%${safe}%`).limit(1000);
+    customerIds = (data ?? []).map((customer: { id: string }) => String(customer.id));
+  }
+  let salesQuery = s.from("sales").select("id,number,status,total,completed_at,created_at,customers(full_name),employees(full_name)").order("created_at", { ascending: false }).limit(100);
+  if (term) {
+    salesQuery = salesQuery.in("customer_id", customerIds?.length ? customerIds : ["00000000-0000-0000-0000-000000000000"]);
+  } else {
+    salesQuery = salesQuery.gte("created_at", `${range.start}T00:00:00`).lte("created_at", `${range.end}T23:59:59`);
+  }
+  const { data, error } = await salesQuery;
+  const list = (data ?? []) as unknown as Sale[];
+
+  return <div className="page">
+    <PageHeader title="Vendas" description="Vendas concluídas e oportunidades para acompanhamento" action={<AddLink href="/vendas/nova"><Plus size={18} />Nova venda</AddLink>} />
+    <nav className="period-filter" aria-label="Período das vendas">
+      {quickPeriods.map(({ key, label }) => <Link key={key} href={`/vendas?period=${key}${term ? `&q=${encodeURIComponent(term)}` : ""}`} className={range.period === key ? "active" : ""}>{label}</Link>)}
+    </nav>
+    <form className="search-row" aria-label="Buscar vendas por cliente">
+      <input type="hidden" name="period" value={range.period} /><input type="hidden" name="start" value={range.start} /><input type="hidden" name="end" value={range.end} />
+      <div className="search-box"><Search size={19} /><input name="q" defaultValue={term} placeholder="Buscar cliente por nome, cidade, telefone, CPF ou e-mail" aria-label="Buscar cliente" /></div>
+      <button className="btn btn-secondary" type="submit">Buscar cliente</button>
+    </form>
+    <form className="panel panel-body agenda-range" aria-label="Selecionar intervalo personalizado">
+      <input type="hidden" name="period" value="custom" /><input type="hidden" name="q" value={term} />
+      <div className="field"><label htmlFor="start">Data inicial</label><input id="start" type="date" name="start" defaultValue={range.start} required /></div>
+      <div className="field"><label htmlFor="end">Data final</label><input id="end" type="date" name="end" defaultValue={range.end} required /></div>
+      <button className="btn btn-secondary" type="submit"><CalendarCheck size={17} />Aplicar intervalo</button>
+    </form>
+    {range.invalid && <div className="notice notice-error" role="alert">A data inicial deve ser anterior ou igual à data final.</div>}
+    {error ? <div className="panel empty">Erro ao carregar vendas.</div> : list.length ? <div className="data-list">{list.map((sale) => <Link className="data-card" href={`/vendas/${sale.id}`} key={sale.id}><div className="flex justify-between"><strong>{sale.status === "draft" ? "Oportunidade" : "Venda"} #{sale.number}</strong><StatusBadge tone={sale.status === "completed" ? "success" : sale.status === "draft" ? "warning" : "danger"}>{labels[sale.status]}</StatusBadge></div><div className="data-card-meta"><span>{sale.customers?.full_name || "Consumidor não identificado"}</span><span>{sale.employees?.full_name}</span><span>{date(sale.completed_at || sale.created_at, true)}</span><strong>{money(sale.total)}</strong></div></Link>)}</div> : <div className="panel"><EmptyState title={term ? "Nenhuma venda para este cliente" : "Nenhuma venda no período"} description={term ? "A busca considera todos os períodos." : "Selecione outro intervalo ou registre uma nova venda."} /></div>}
+  </div>;
+}
