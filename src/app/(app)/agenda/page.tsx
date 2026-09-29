@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarCheck, Check, Plus } from "lucide-react";
+import { CalendarCheck, Check, Plus, Search } from "lucide-react";
 import { completeExam } from "@/app/(app)/exames/actions";
 import { ConfirmSubmit } from "@/components/confirm-submit";
 import { AddLink, EmptyState, PageHeader, StatusBadge } from "@/components/ui";
@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { date, examLabels } from "@/lib/utils";
 import type { Exam } from "@/lib/database.types";
 
-type Search = { period?: string; start?: string; end?: string; saved?: string; error?: string };
+type Search = { period?: string; start?: string; end?: string; q?: string; saved?: string; error?: string };
 const quickPeriods: Array<{ key: AgendaPeriodKey; label: string }> = [
   { key: "today", label: "Hoje" },
   { key: "last7", label: "Últimos 7 dias" },
@@ -22,7 +22,14 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
   const params = await searchParams;
   const range = resolveAgendaPeriod(params);
   const supabase = await createClient();
-  const { data: rows, error } = await supabase
+  const customerTerm = (params.q || "").trim();
+  let customerIds: string[] | undefined;
+  if (customerTerm) {
+    const safe = customerTerm.replace(/[%_,]/g, "");
+    const { data } = await supabase.from("customers").select("id").or(`full_name.ilike.%${safe}%,cpf.ilike.%${safe}%,phone.ilike.%${safe}%,email.ilike.%${safe}%,city.ilike.%${safe}%,state.ilike.%${safe}%,address_line.ilike.%${safe}%`).limit(1000);
+    customerIds = (data ?? []).map((customer: { id: string }) => String(customer.id));
+  }
+  let examsQuery = supabase
     .from("exams")
     .select("id,status,scheduled_at,completed_at,duration_minutes,professional_name,customers(id,full_name,phone)")
     .gte("scheduled_at", agendaTimestamp(range.start))
@@ -30,6 +37,8 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
     .neq("status", "external")
     .order("scheduled_at")
     .limit(500);
+  if (customerTerm) examsQuery = examsQuery.in("customer_id", customerIds?.length ? customerIds : ["00000000-0000-0000-0000-000000000000"]);
+  const { data: rows, error } = await examsQuery;
   const list = (rows ?? []) as unknown as Exam[];
   const returnTo = `/agenda?period=${range.period}&start=${range.start}&end=${range.end}`;
   const grouped = list.reduce<Record<string, Exam[]>>((days, exam) => {
@@ -43,11 +52,19 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
     <PageHeader title="Exames" description="Exames agendados, confirmados e concluídos" action={<AddLink href="/exames/novo"><Plus size={18}/>Novo exame</AddLink>} />
 
     <nav className="period-filter" aria-label="Período dos exames">
-      {quickPeriods.map(({ key, label }) => <Link key={key} href={`/agenda?period=${key}`} className={range.period === key ? "active" : ""}>{label}</Link>)}
+      {quickPeriods.map(({ key, label }) => <Link key={key} href={`/agenda?period=${key}${customerTerm ? `&q=${encodeURIComponent(customerTerm)}` : ""}`} className={range.period === key ? "active" : ""}>{label}</Link>)}
     </nav>
 
+    <form className="search-row" aria-label="Buscar exames por cliente">
+      <input type="hidden" name="period" value={range.period} />
+      <input type="hidden" name="start" value={range.start} />
+      <input type="hidden" name="end" value={range.end} />
+      <div className="search-box"><Search size={19} /><input name="q" defaultValue={customerTerm} placeholder="Buscar cliente por nome, cidade, telefone, CPF ou e-mail" aria-label="Buscar cliente" /></div>
+      <button className="btn btn-secondary" type="submit">Buscar cliente</button>
+    </form>
+
     <form className="panel panel-body agenda-range" aria-label="Selecionar intervalo personalizado">
-      <input type="hidden" name="period" value="custom" />
+      <input type="hidden" name="period" value="custom" /><input type="hidden" name="q" value={customerTerm} />
       <div className="field"><label htmlFor="start">Data inicial</label><input id="start" type="date" name="start" defaultValue={range.start} required /></div>
       <div className="field"><label htmlFor="end">Data final</label><input id="end" type="date" name="end" defaultValue={range.end} required /></div>
       <button className="btn btn-secondary" type="submit"><CalendarCheck size={17}/>Aplicar intervalo</button>
