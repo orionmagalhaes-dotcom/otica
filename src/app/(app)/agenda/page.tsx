@@ -79,7 +79,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
       {quickPeriods.map(({ key, label }) => { const active = hasSelectedPeriod && range.period === key; return <Link key={key} href={agendaHref(selectedFilter, active ? undefined : key)} className={active ? "active" : ""}>{label}</Link>; })}
     </nav>
     <nav className="period-filter" aria-label="Situação dos exames">
-      <Link href={agendaHref(undefined)} className={!selectedFilter ? "active" : ""}>Todos</Link>
+      <Link href={agendaHref(undefined)}>Todos</Link>
       {examFilters.map(({ key, label }) => <Link key={key} href={agendaHref(key)} className={selectedFilter === key ? "active" : ""}>{label}</Link>)}
     </nav>
 
@@ -94,7 +94,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
       <input type="hidden" name="period" value="custom" /><input type="hidden" name="q" value={customerTerm} />{selectedFilter && <input type="hidden" name="filter" value={selectedFilter} />}
       <div className="field"><label htmlFor="start">Data inicial</label><input id="start" type="date" name="start" defaultValue={range.start} required /></div>
       <div className="field"><label htmlFor="end">Data final</label><input id="end" type="date" name="end" defaultValue={range.end} required /></div>
-      <button className="btn btn-secondary" type="submit"><CalendarCheck size={17}/>Aplicar intervalo</button>
+      <button className={hasSelectedPeriod && range.period === "custom" ? "btn btn-primary" : "btn btn-secondary"} type="submit"><CalendarCheck size={17}/>Aplicar intervalo</button>
     </form>
 
     {range.invalid && <div className="notice notice-error" role="alert">A data inicial deve ser anterior ou igual à data final.</div>}
