@@ -4,13 +4,18 @@ create extension if not exists pgcrypto;
 create extension if not exists unaccent;
 create extension if not exists pg_trgm;
 
-create type public.app_role as enum ('admin', 'manager', 'employee');
-create type public.employee_status as enum ('active', 'inactive');
-create type public.exam_status as enum ('scheduled', 'confirmed', 'completed', 'no_show', 'cancelled', 'external');
-create type public.stock_movement_type as enum ('purchase', 'sale', 'sale_reversal', 'adjustment_in', 'adjustment_out', 'return');
-create type public.sale_status as enum ('draft', 'completed', 'cancelled');
-create type public.finance_type as enum ('income', 'expense');
-create type public.finance_status as enum ('pending', 'paid', 'cancelled');
+-- Supabase can leave enum types behind when an interrupted first deployment is
+-- retried.  Make the schema bootstrap safe to rerun in that partial state.
+do $$
+begin
+  if to_regtype('public.app_role') is null then create type public.app_role as enum ('admin', 'manager', 'employee'); end if;
+  if to_regtype('public.employee_status') is null then create type public.employee_status as enum ('active', 'inactive'); end if;
+  if to_regtype('public.exam_status') is null then create type public.exam_status as enum ('scheduled', 'confirmed', 'completed', 'no_show', 'cancelled', 'external'); end if;
+  if to_regtype('public.stock_movement_type') is null then create type public.stock_movement_type as enum ('purchase', 'sale', 'sale_reversal', 'adjustment_in', 'adjustment_out', 'return'); end if;
+  if to_regtype('public.sale_status') is null then create type public.sale_status as enum ('draft', 'completed', 'cancelled'); end if;
+  if to_regtype('public.finance_type') is null then create type public.finance_type as enum ('income', 'expense'); end if;
+  if to_regtype('public.finance_status') is null then create type public.finance_status as enum ('pending', 'paid', 'cancelled'); end if;
+end $$;
 
 create table public.roles (
   id public.app_role primary key,

@@ -1,10 +1,11 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type AppRole = "admin" | "manager" | "employee";
+export type EmployeeAccessType = "standard" | "salesperson" | "professional";
 export type ExamStatus = "scheduled" | "confirmed" | "completed" | "no_show" | "cancelled" | "external";
 export type SaleStatus = "draft" | "completed" | "cancelled";
 
-export interface Profile { id: string; full_name: string; role: AppRole; active: boolean; }
+export interface Profile { id: string; full_name: string; role: AppRole; active: boolean; access_type: EmployeeAccessType; }
 export interface Customer {
   id: string; full_name: string; birth_date: string | null; cpf: string | null; phone: string | null;
   email: string | null; address_line: string | null; city: string | null; state: string | null;

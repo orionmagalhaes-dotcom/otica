@@ -19,7 +19,8 @@ const navigation = [
 
 export function AppShell({ children, profile }: { children: React.ReactNode; profile: Profile }) {
   const pathname = usePathname(); const router = useRouter(); const [open, setOpen] = useState(false);
-  const visible = navigation.filter((item) => (!item.manager || profile.role !== "employee") && (!item.admin || profile.role === "admin"));
+  const isSalesperson = profile.access_type === "salesperson"; const isProfessional = profile.access_type === "professional";
+  const visible = navigation.filter((item) => (!item.manager || profile.role !== "employee") && (!item.admin || profile.role === "admin") && (!isSalesperson || ["/clientes", "/vendas"].includes(item.href)) && (!isProfessional || ["/agenda", "/clientes"].includes(item.href)));
   const quickNavigation = ["/", "/agenda", "/vendas", "/clientes", "/produtos"].map((href) => visible.find((item) => item.href === href)).filter(Boolean) as typeof visible;
   async function logout() { await createClient().auth.signOut(); router.push("/login"); router.refresh(); }
   const links = visible.map(({ href, label, icon: Icon }) => {
@@ -32,7 +33,7 @@ export function AppShell({ children, profile }: { children: React.ReactNode; pro
       <div className="sidebar-top"><Link href="/" className="brand"><span className="brand-mark">O</span><span>Ótica Central<small>Gestão</small></span></Link><button className="close-menu" onClick={() => setOpen(false)} aria-label="Fechar menu"><X /></button></div>
       <nav aria-label="Navegação principal">{links}</nav>
       <ThemeToggle />
-      <div className="sidebar-user"><div className="avatar">{profile.full_name.slice(0,1)}</div><div><strong>{profile.full_name}</strong><span>{profile.role === "admin" ? "Administrador" : profile.role === "manager" ? "Gerente" : "Funcionário"}</span></div><button onClick={logout} aria-label="Sair"><LogOut size={18}/></button></div>
+      <div className="sidebar-user"><div className="avatar">{profile.full_name.slice(0,1)}</div><div><strong>{profile.full_name}</strong><span>{profile.role === "admin" ? "Administrador" : profile.role === "manager" ? "Gerente" : isSalesperson ? "Vendedora" : isProfessional ? "Profissional" : "Funcionário"}</span></div><button onClick={logout} aria-label="Sair"><LogOut size={18}/></button></div>
     </aside>
     {open && <button className="backdrop" onClick={() => setOpen(false)} aria-label="Fechar menu"/>}
     <main>{children}</main>

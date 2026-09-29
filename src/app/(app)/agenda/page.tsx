@@ -53,7 +53,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
   if (selectedFilter === "upcoming") examsQuery = examsQuery.in("status", ["scheduled", "confirmed"]).gte("scheduled_at", agendaTimestamp(todayInSaoPaulo()));
   const { data: rows, error } = await examsQuery;
   const list = (rows ?? []) as unknown as Exam[];
-  function agendaHref(filter = selectedFilter, period: AgendaPeriodKey | undefined = hasSelectedPeriod ? range.period : undefined) {
+  function agendaHref(filter: Search["filter"] | null = selectedFilter ?? null, period: AgendaPeriodKey | undefined = hasSelectedPeriod ? range.period : undefined) {
     const query = new URLSearchParams();
     if (period) {
       query.set("period", period);
@@ -79,7 +79,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
       {quickPeriods.map(({ key, label }) => { const active = hasSelectedPeriod && range.period === key; return <Link key={key} href={agendaHref(selectedFilter, active ? undefined : key)} className={active ? "active" : ""}>{label}</Link>; })}
     </nav>
     <nav className="period-filter" aria-label="Situação dos exames">
-      <Link href={agendaHref(undefined)}>Todos</Link>
+      <Link href={agendaHref(null)}>Todos</Link>
       {examFilters.map(({ key, label }) => <Link key={key} href={agendaHref(key)} className={selectedFilter === key ? "active" : ""}>{label}</Link>)}
     </nav>
 
