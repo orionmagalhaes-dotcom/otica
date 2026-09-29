@@ -1,0 +1,2 @@
+"use server";import { revalidatePath } from "next/cache";import { redirect } from "next/navigation";import { createClient } from "@/lib/supabase/server";
+export async function cancelSale(fd:FormData){const id=String(fd.get("id"));const reason=String(fd.get("reason")||"");const s=await createClient();const {error}=await s.rpc("cancel_sale",{p_sale_id:id,p_reason:reason});if(error)redirect(`/vendas/${id}?error=${encodeURIComponent(error.message)}`);revalidatePath("/vendas");revalidatePath("/produtos");revalidatePath("/financeiro");redirect(`/vendas/${id}?cancelled=1`)}

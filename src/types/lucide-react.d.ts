@@ -1,0 +1,28 @@
+declare module "lucide-react" {
+  import type { ComponentType, SVGProps } from "react";
+  export type LucideIcon = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
+  export const AlertTriangle: LucideIcon;
+  export const CalendarDays: LucideIcon;
+  export const CalendarPlus: LucideIcon;
+  export const ChartNoAxesCombined: LucideIcon;
+  export const CircleDollarSign: LucideIcon;
+  export const ClipboardList: LucideIcon;
+  export const Clock3: LucideIcon;
+  export const ContactRound: LucideIcon;
+  export const Database: LucideIcon;
+  export const Eye: LucideIcon;
+  export const House: LucideIcon;
+  export const KeyRound: LucideIcon;
+  export const LogOut: LucideIcon;
+  export const Menu: LucideIcon;
+  export const Minus: LucideIcon;
+  export const Package: LucideIcon;
+  export const Pencil: LucideIcon;
+  export const Plus: LucideIcon;
+  export const Search: LucideIcon;
+  export const Server: LucideIcon;
+  export const ShoppingBag: LucideIcon;
+  export const Trash2: LucideIcon;
+  export const Users: LucideIcon;
+  export const X: LucideIcon;
+}

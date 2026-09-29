@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "otica-gestao",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://mpkwhxsqhbnvzkjgnhtt.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_t2eGNbpi0tPr5JYY9uUj0g_-mqmlirC"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
