@@ -214,15 +214,40 @@ begin
         v_total, v_sale_date, '[DEMO] Venda demonstrativa', 'sale', v_actor, v_sale_time, v_sale_time);
     end loop;
   end loop;
+
+  for v_index in 1..8 loop
+    v_sale_time := ((current_date - v_index)::timestamp + make_interval(hours => 9 + (v_index % 3), mins => 10)) at time zone 'America/Sao_Paulo';
+    insert into public.exams(id, customer_id, status, scheduled_at, duration_minutes,
+      professional_name, notes, completed_at, created_by, created_at, updated_at)
+    values (md5('demo-exam-completed-' || v_index)::uuid,
+      v_customers[((v_index - 1) % array_length(v_customers, 1)) + 1],
+      'completed', v_sale_time, 30, 'Dra. Helena Demo',
+      '[DEMO] Consulta concluída com prescrição registrada.', v_sale_time + interval '30 minutes',
+      v_actor, v_sale_time - interval '7 days', v_sale_time + interval '30 minutes')
+    on conflict (id) do nothing;
+  end loop;
+
+  for v_index in 1..10 loop
+    v_sale_time := ((current_date + v_index)::timestamp + make_interval(hours => 9 + ((v_index % 3) * 2), mins => 30)) at time zone 'America/Sao_Paulo';
+    insert into public.exams(id, customer_id, status, scheduled_at, duration_minutes,
+      professional_name, notes, created_by, created_at, updated_at)
+    values (md5('demo-exam-future-' || v_index)::uuid,
+      v_customers[((v_index + 3) % array_length(v_customers, 1)) + 1],
+      case when v_index % 2 = 0 then 'confirmed'::public.exam_status else 'scheduled'::public.exam_status end,
+      v_sale_time, 30, 'Dra. Helena Demo', '[DEMO] Consulta futura para apresentação da agenda.',
+      v_actor, now(), now())
+    on conflict (id) do nothing;
+  end loop;
 end $$;
 
 commit;
 
--- Resumo esperado após a primeira execução: 12 clientes, 12 produtos e 30 vendas.
+-- Resumo esperado: 12 clientes, 12 produtos, 30 vendas e 18 consultas.
 select
   count(*) as vendas_demo,
   coalesce(sum(total), 0) as faturamento_demo,
   min(completed_at::date) as inicio,
-  max(completed_at::date) as fim
+  max(completed_at::date) as fim,
+  (select count(*) from public.exams where notes like '[DEMO]%') as consultas_demo
 from public.sales
 where notes = '[DEMO] Venda demonstrativa';

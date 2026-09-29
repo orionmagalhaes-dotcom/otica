@@ -3,8 +3,10 @@ declare module "lucide-react" {
   export type LucideIcon = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
   export const AlertTriangle: LucideIcon;
   export const CalendarDays: LucideIcon;
+  export const CalendarCheck: LucideIcon;
   export const CalendarPlus: LucideIcon;
   export const ChartNoAxesCombined: LucideIcon;
+  export const Check: LucideIcon;
   export const CircleDollarSign: LucideIcon;
   export const ClipboardList: LucideIcon;
   export const Clock3: LucideIcon;

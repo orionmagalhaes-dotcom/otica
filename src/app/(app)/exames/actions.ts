@@ -16,3 +16,16 @@ export async function saveExam(formData: FormData) {
  if(result.error) redirect(`/exames/${id?`${id}/editar`:"novo"}?error=${encodeURIComponent("Não foi possível salvar o exame.")}`);
  revalidatePath("/agenda");revalidatePath("/exames");redirect(`/exames/${result.data.id}?saved=1`);
 }
+
+export async function completeExam(formData: FormData) {
+ const id=z.string().uuid().safeParse(String(formData.get("id")||""));
+ const requestedReturn=String(formData.get("return_to")||"/agenda");
+ const returnTo=requestedReturn.startsWith("/agenda")&&!requestedReturn.startsWith("//")?requestedReturn:"/agenda";
+ const destination=(result:string)=>`${returnTo}${returnTo.includes("?")?"&":"?"}${result}`;
+ if(!id.success)redirect(destination("error=invalid_exam"));
+ const supabase=await createClient();const {data:{user}}=await supabase.auth.getUser();if(!user)redirect("/login");
+ const {data,error}=await supabase.from("exams").update({status:"completed",completed_at:new Date().toISOString(),cancellation_reason:null}).eq("id",id.data).in("status",["scheduled","confirmed"]).select("id,customer_id").maybeSingle();
+ if(error||!data)redirect(destination("error=invalid_state"));
+ revalidatePath("/agenda");revalidatePath("/exames");revalidatePath(`/exames/${id.data}`);revalidatePath(`/clientes/${data.customer_id}`);
+ redirect(destination("saved=completed"));
+}

@@ -25,6 +25,7 @@ por este projeto.
 O arquivo `supabase/seed_demo_15_days.sql` cria, em uma única transação, 12
 clientes, 12 produtos com movimentações de estoque e 30 vendas distribuídas nos
 últimos 15 dias, com seus pagamentos e lançamentos financeiros. Os registros são
-marcados como `DEMO` e o script pode ser executado novamente sem duplicar vendas.
+marcados como `DEMO`. O mesmo script inclui 8 consultas concluídas e 10 consultas
+futuras, e pode ser executado novamente sem duplicar os dados.
 
 Consulte [Arquitetura](docs/ARCHITECTURE.md) e [Backup e recuperação](docs/BACKUP_AND_RECOVERY.md).
