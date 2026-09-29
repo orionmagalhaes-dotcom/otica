@@ -79,7 +79,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<S
       {quickPeriods.map(({ key, label }) => { const active = hasSelectedPeriod && range.period === key; return <Link key={key} href={agendaHref(selectedFilter, active ? undefined : key)} className={active ? "active" : ""}>{label}</Link>; })}
     </nav>
     <nav className="period-filter" aria-label="Situação dos exames">
-      <Link href={agendaHref(null)}>Todos</Link>
+      <Link href={agendaHref(null)} className={!selectedFilter ? "active" : ""}>Todos</Link>
       {examFilters.map(({ key, label }) => <Link key={key} href={agendaHref(key)} className={selectedFilter === key ? "active" : ""}>{label}</Link>)}
     </nav>
 
